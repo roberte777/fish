@@ -1,4 +1,5 @@
 use bevy::{
+    input::mouse::MouseMotion,
     pbr::wireframe::{WireframeConfig, WireframePlugin},
     prelude::*,
     render::{mesh::Indices, render_resource::PrimitiveTopology},
@@ -57,39 +58,39 @@ fn setup(
 fn camera_movement(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
+    mut motion_evr: EventReader<MouseMotion>,
     mut query: Query<&mut Transform, With<Camera3d>>,
 ) {
-    let mut camera = query.single_mut();
-    let mut forward = camera.forward();
-    forward.y = 0.;
-    forward = forward.normalize();
-    let speed = 3.;
-    let rotate_speed = 3.;
-    if keyboard_input.pressed(KeyCode::W) {
-        camera.translation += forward * speed * time.delta_seconds();
+    // rotate camera with mouse
+    let mut rotation_move = Vec2::ZERO;
+    for ev in motion_evr.read() {
+        rotation_move += ev.delta;
     }
-    if keyboard_input.pressed(KeyCode::S) {
-        camera.translation -= forward * speed * time.delta_seconds();
+    if rotation_move.length() > 0.0 {
+        let yaw = Quat::from_rotation_y(-rotation_move.x * time.delta_seconds());
+        let pitch = Quat::from_rotation_x(-rotation_move.y * time.delta_seconds());
+        for mut transform in query.iter_mut() {
+            transform.rotation = yaw * transform.rotation;
+            transform.rotation = transform.rotation * pitch;
+        }
     }
-    let right = camera.rotation * Vec3::X;
-    if keyboard_input.pressed(KeyCode::D) {
-        camera.translation += right * speed * time.delta_seconds();
-    }
-    if keyboard_input.pressed(KeyCode::A) {
-        camera.translation -= right * speed * time.delta_seconds();
-    }
-    let up = camera.rotation * Vec3::Y;
-    if keyboard_input.pressed(KeyCode::Space) {
-        camera.translation += up * speed * time.delta_seconds();
-    }
-    if keyboard_input.pressed(KeyCode::ShiftLeft) {
-        camera.translation -= up * speed * time.delta_seconds();
-    }
-    if keyboard_input.pressed(KeyCode::Q) {
-        camera.rotate_axis(Vec3::Y, rotate_speed * time.delta_seconds());
-    }
-    if keyboard_input.pressed(KeyCode::E) {
-        camera.rotate_axis(Vec3::Y, -rotate_speed * time.delta_seconds());
+    // wasd movement
+    let move_factor = 4.;
+    let mut translation_move = Vec3::ZERO;
+    for mut transform in query.iter_mut() {
+        if keyboard_input.pressed(KeyCode::W) {
+            translation_move += transform.forward() * move_factor * time.delta_seconds();
+        }
+        if keyboard_input.pressed(KeyCode::S) {
+            translation_move -= transform.forward() * move_factor * time.delta_seconds();
+        }
+        if keyboard_input.pressed(KeyCode::A) {
+            translation_move -= transform.right() * move_factor * time.delta_seconds();
+        }
+        if keyboard_input.pressed(KeyCode::D) {
+            translation_move += transform.right() * move_factor * time.delta_seconds();
+        }
+        transform.translation += translation_move;
     }
 }
 
