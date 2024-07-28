@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.12.1", features = ["wayland"]}
-noise = "0.8.2"
+bevy = { version = "0.14", features = ["wayland"]}
+noise = "0.8"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
